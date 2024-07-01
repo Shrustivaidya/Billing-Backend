@@ -6,7 +6,7 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3001
 
 //schema
 const schemaData = mongoose.Schema({
@@ -27,11 +27,42 @@ const registerSchema = mongoose.Schema({
     timestamps: true
 })
 
+//Billing Schema
+const BillingSchema = new mongoose.Schema({
+    date: Date,
+    seller: String,
+    purchases:String,
+    category: String,
+    amount: Number,
+    remark: String,
+  },{
+    timestamps: true
+  })
 
 
 //read
 const userModal = mongoose.model("user",schemaData)
 const registerModal = mongoose.model("Register", registerSchema)
+const Billing = mongoose.model('Billing', BillingSchema);
+
+
+app.get('/homepage', async (req, res) => {
+    const billings = await Billing.find();
+    res.json(billings);
+  });
+  
+  app.post('/homepage', async (req, res) => {
+    try {
+        const newBilling = new Billing(req.body);
+        await newBilling.save();
+        res.json(newBilling);
+    } catch (error) {
+        console.error('Error in POST /homepage:', error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+});
+  
+  
 
 
 
