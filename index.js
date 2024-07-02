@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs');
 
 const app = express()
 app.use(cors())
@@ -44,6 +45,33 @@ const BillingSchema = new mongoose.Schema({
 const userModal = mongoose.model("user",schemaData)
 const registerModal = mongoose.model("Register", registerSchema)
 const Billing = mongoose.model('Billing', BillingSchema);
+
+
+app.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Check if user exists with given email
+        const user = await Register.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Verify password using bcryptjs
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        // If credentials are correct
+        res.status(200).json({ success: true, message: "Login successful" });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({ message: "Server error", error });
+    }
+});
 
 
 app.get('/homepage', async (req, res) => {
