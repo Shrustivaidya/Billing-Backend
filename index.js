@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs');
 
 const app = express()
 app.use(cors())
@@ -46,6 +47,33 @@ const registerModal = mongoose.model("Register", registerSchema)
 const Billing = mongoose.model('Billing', BillingSchema);
 
 
+app.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        // Check if user exists with given email
+        const user = await Register.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Verify password using bcryptjs
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ message: "Invalid credentials" });
+        }
+
+        // If credentials are correct
+        res.status(200).json({ success: true, message: "Login successful" });
+    } catch (error) {
+        console.error("Login error:", error);
+        res.status(500).json({ message: "Server error", error });
+    }
+});
+
+
 app.get('/homepage', async (req, res) => {
     const billings = await Billing.find();
     res.json(billings);
@@ -61,6 +89,54 @@ app.get('/homepage', async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 });
+
+
+app.get('/homepage/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const billing = await Billing.findById(id);
+        if (!billing) {
+            return res.status(404).json({ message: 'Billing record not found' });
+        }
+        res.json(billing);
+    } catch (error) {
+        console.error('Error fetching billing record by ID:', error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+});
+
+
+
+// Update a billing record by ID (EDIT FUNCTIONALITY)
+app.put('/homepage/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: 'Invalid ID format' });
+        }
+        const updatedBilling = await Billing.findByIdAndUpdate(id, req.body, { new: true });
+        if (!updatedBilling) {
+            return res.status(404).json({ message: 'Billing record not found' });
+        }
+        res.json(updatedBilling);
+    } catch (error) {
+        console.error('Error in PUT /homepage/:id:', error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+});
+
+
+
+  app.delete('/homepage/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      await Billing.findByIdAndDelete(id);
+      res.json({ message: 'Billing record deleted successfully' });
+    } catch (error) {
+      console.error('Error in DELETE /homepage/:id:', error);
+      res.status(500).json({ message: 'Server error', error });
+    }
+  });
   
   
 
