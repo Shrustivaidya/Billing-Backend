@@ -61,6 +61,54 @@ app.get('/homepage', async (req, res) => {
         res.status(500).json({ message: 'Server error', error });
     }
 });
+
+
+app.get('/homepage/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const billing = await Billing.findById(id);
+        if (!billing) {
+            return res.status(404).json({ message: 'Billing record not found' });
+        }
+        res.json(billing);
+    } catch (error) {
+        console.error('Error fetching billing record by ID:', error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+});
+
+
+
+// Update a billing record by ID (EDIT FUNCTIONALITY)
+app.put('/homepage/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ message: 'Invalid ID format' });
+        }
+        const updatedBilling = await Billing.findByIdAndUpdate(id, req.body, { new: true });
+        if (!updatedBilling) {
+            return res.status(404).json({ message: 'Billing record not found' });
+        }
+        res.json(updatedBilling);
+    } catch (error) {
+        console.error('Error in PUT /homepage/:id:', error);
+        res.status(500).json({ message: 'Server error', error });
+    }
+});
+
+
+
+  app.delete('/homepage/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      await Billing.findByIdAndDelete(id);
+      res.json({ message: 'Billing record deleted successfully' });
+    } catch (error) {
+      console.error('Error in DELETE /homepage/:id:', error);
+      res.status(500).json({ message: 'Server error', error });
+    }
+  });
   
   
 
