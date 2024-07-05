@@ -68,19 +68,13 @@ app.post("/create", async (req, res) => {
         return res.status(400).json({ success: false, message: "Email and password are required" });
       }
   
-      // Check if the user already exists
-      const existingUser = await userModal.findOne({ email });
-      if (existingUser) {
-        console.log(`User already exists: ${email}`);
-        return res.status(400).json({ success: false, message: "User already exists" });
-      }
-  
       // Hash the password before saving
       const hashedPassword = await bcrypt.hash(password, 10);
       const newUser = new userModal({ email, password: hashedPassword });
   
       // Save the new user
       await newUser.save();
+      
       console.log(`User created successfully: ${email}`);
       res.status(201).json({ success: true, message: "User created successfully" });
     } catch (error) {
@@ -124,10 +118,8 @@ app.post("/login", async (req, res) => {
       const user = await registerModal.findOne({ email });
   
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "User not found. Please register first." });
       }
-  
-      console.log("User found:", user);
   
       // Verify password using bcryptjs
       const isMatch = await bcrypt.compare(password, user.password);
@@ -137,8 +129,7 @@ app.post("/login", async (req, res) => {
       if (!isMatch) {
         return res.status(400).json({ message: "Invalid credentials" });
       }
-      // Save the new user
-      await user.save();
+  
       // Generate JWT token
       const token = generateToken(user); // Assuming generateToken is defined elsewhere
   
@@ -149,6 +140,7 @@ app.post("/login", async (req, res) => {
       res.status(500).json({ message: "Server error", error });
     }
   });
+  
   
 app.get("/homepage", async (req, res) => {
   const billings = await Billing.find();
