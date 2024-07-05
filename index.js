@@ -28,7 +28,7 @@ const registerSchema = new mongoose.Schema(
     name: String,
     email: String,
     password: String,
-    reEnterPassword: String,
+   // reEnterPassword: String,
   },
   {
     timestamps: true,
@@ -58,6 +58,39 @@ const registerModal = mongoose.model("Register", registerSchema);
 const Billing = mongoose.model("Billing", BillingSchema);
 
 
+app.post("/create", async (req, res) => {
+    const { email, password } = req.body;
+  
+    try {
+      // Validate the request body
+      if (!email || !password) {
+        console.log("Validation error: Email and password are required");
+        return res.status(400).json({ success: false, message: "Email and password are required" });
+      }
+  
+      // Check if the user already exists
+      const existingUser = await userModal.findOne({ email });
+      if (existingUser) {
+        console.log(`User already exists: ${email}`);
+        return res.status(400).json({ success: false, message: "User already exists" });
+      }
+  
+      // Hash the password before saving
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = new userModal({ email, password: hashedPassword });
+  
+      // Save the new user
+      await newUser.save();
+      console.log(`User created successfully: ${email}`);
+      res.status(201).json({ success: true, message: "User created successfully" });
+    } catch (error) {
+      console.error("Error creating user:", error.message);
+      console.error("Stack Trace:", error.stack);
+      res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+  });
+  
+  
 // Middleware for authentication
 const authenticateToken = (req, res, next) => {
     const token = req.header('Authorization');
@@ -104,7 +137,8 @@ app.post("/login", async (req, res) => {
       if (!isMatch) {
         return res.status(400).json({ message: "Invalid credentials" });
       }
-  
+      // Save the new user
+      await user.save();
       // Generate JWT token
       const token = generateToken(user); // Assuming generateToken is defined elsewhere
   
@@ -197,12 +231,6 @@ app.put("/updates", async (req, res) => {
   res.send({ success: true, message: "Data updated successfully" });
 });
 
-// app.post("/register", async (req, res) => {
-//   console.log(req.body);
-//   const data = new registerModal(req.body);
-//   await data.save();
-//   res.send({ success: true, message: "Registration data saved successfully" });
-// });
 
 app.post("/register", async (req, res) => {
     const { name, email, password, reEnterPassword } = req.body;
